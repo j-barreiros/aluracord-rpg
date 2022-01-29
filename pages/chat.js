@@ -1,17 +1,18 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
-import React, {useSate} from 'react';
+import React, { useSate } from 'react';
 import appConfig from '../config.json';
 
 
 export default function ChatPage() {
     // Sua lógica vai aqui
     const [message, setMessage] = React.useState('');
-    const [messages, setMessages] = React.useState([])
+    const [messageList, setMessageList] = React.useState([])
     // ./Sua lógica vai aqui
 
-    function handleKeyPress(event) {
-        if(event.key == 'Enter'){
-            setMessages([...messages,event.target.value]);
+    function handleKeyPress(event, newMessage) {
+        if (event.key == 'Enter') {
+            const complexMessage = { id: messageList.length, from: 'j-novaes', text: newMessage }
+            setMessageList([complexMessage,...messageList]);
             event.preventDefault();
             setMessage('');
         }
@@ -55,8 +56,12 @@ export default function ChatPage() {
                     }}
                 >
 
-                    {/* <MessageList mensagens={[]} /> */}
-                    <Box>{messages.map(message => <p>{message}</p>)}</Box>
+                    <MessageList messageList={messageList} />
+
+                    {/* APAGAR ISSO AQUI 
+                    
+                    <Box>{messageList.map(m => <p key={m.id}>{m.from} : {m.text}</p>)}</Box>
+                    */}
                     <Box
                         as="form"
                         styleSheet={{
@@ -68,8 +73,8 @@ export default function ChatPage() {
                             value={message}
                             placeholder="Insira sua mensagem aqui..."
                             type="textarea"
-                            onChange={(event) => {setMessage(event.target.value)}}
-                            onKeyPress={(event) => handleKeyPress(event)}
+                            onChange={(event) => { setMessage(event.target.value) }}
+                            onKeyPress={(event) => handleKeyPress(event, message)}
                             styleSheet={{
                                 width: '100%',
                                 border: '0',
@@ -81,6 +86,7 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+                        
                     </Box>
                 </Box>
             </Box>
@@ -105,14 +111,15 @@ function Header() {
         </>
     )
 }
-/*
-function MessageList(props) {
-    console.log('MessageList', props);
+
+function MessageList({ messageList }) {
+    //console.log('MessageList', props);
     return (
         <Box
             tag="ul"
             styleSheet={{
-                overflow: 'scroll',
+                overflowX: 'hidden',
+                overflowY: 'scroll',
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 flex: 1,
@@ -120,51 +127,56 @@ function MessageList(props) {
                 marginBottom: '16px',
             }}
         >
+            {messageList.map((message) => {
+                return (
 
-            <Text
-                key={mensagem.id}
-                tag="li"
-                styleSheet={{
-                    borderRadius: '5px',
-                    padding: '6px',
-                    marginBottom: '12px',
-                    hover: {
-                        backgroundColor: appConfig.theme.colors.neutrals[700],
-                    }
-                }}
-            >
-                <Box
-                    styleSheet={{
-                        marginBottom: '8px',
-                    }}
-                >
-                    <Image
-                        styleSheet={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            display: 'inline-block',
-                            marginRight: '8px',
-                        }}
-                        src={`https://github.com/vanessametonini.png`}
-                    />
-                    <Text tag="strong">
-                        {mensagem.de}
-                    </Text>
                     <Text
+                        key={message.id}
+                        tag="li"
                         styleSheet={{
-                            fontSize: '10px',
-                            marginLeft: '8px',
-                            color: appConfig.theme.colors.neutrals[300],
+                            width: '100%',
+                            borderRadius: '5px',
+                            padding: '6px',
+                            marginBottom: '12px',
+                            hover: {
+                                backgroundColor: appConfig.theme.colors.neutrals[700],
+                            }
                         }}
-                        tag="span"
                     >
-                        {(new Date().toLocaleDateString())}
+                        <Box
+                            styleSheet={{
+                                marginBottom: '8px',
+                            }}
+                        >
+                            <Image
+                                styleSheet={{
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    display: 'inline-block',
+                                    marginRight: '8px',
+                                }}
+                                src={`https://github.com/vanessametonini.png`}
+                            />
+                            <Text tag="strong" styleSheet={{display:'inline'}}>
+                                {message.from}
+                            </Text>
+                            <Text
+                                styleSheet={{
+                                    fontSize: '10px',
+                                    marginLeft: '8px',
+                                    color: appConfig.theme.colors.neutrals[300],
+                                    display:'inline'
+                                }}
+                                tag="span"
+                            >
+                                {(new Date().toLocaleDateString())}
+                            </Text>
+                        </Box>
+                        {message.text}
                     </Text>
-                </Box>
-                {mensagem.texto}
-            </Text>
+                )
+            })}
         </Box>
     )
 }
-*/

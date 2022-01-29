@@ -55,24 +55,6 @@ export default function PaginaInicial() {
 
   function handleUsername(event) {
     setUsername(event.target.value);
-    /*    useEffect(() => {
-          setUsername(event.target.value);
-        }, getName);
-        console.log(username)
-        if(username.length > 2) {
-            axios.get(`https://api.github.com/users/${username}`)
-            .then(res => {
-                if(res){
-                    setName((prevState) => res.data.name);
-                } else {
-                    setName('');
-                }
-                
-            })
-            .catch(err => 
-                setName('')
-            )
-        }*/
   }
 
   function getName() {
