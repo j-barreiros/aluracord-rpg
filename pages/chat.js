@@ -1,6 +1,7 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React, { useSate } from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js'
 
 
 export default function ChatPage() {
@@ -9,13 +10,48 @@ export default function ChatPage() {
     const [messageList, setMessageList] = React.useState([])
     // ./Sua lógica vai aqui
 
-    function handleKeyPress(event, newMessage) {
-        if (event.key == 'Enter') {
-            const complexMessage = { id: messageList.length, from: 'j-novaes', text: newMessage }
-            setMessageList([complexMessage,...messageList]);
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQ3MjIwOCwiZXhwIjoxOTU5MDQ4MjA4fQ.IkByJnqNkKT7c3GnT3sg8DRG2IHt-oQ3mjZwFX13V7c'
+    const SUPABASE_URL = 'https://pubajyetphvslihfgagf.supabase.co'
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    React.useEffect(() => {
+        supabaseClient
+            .from('messages')
+            .select('*')
+            .order('id', {ascending: false})
+            .then(({ data }) => {
+                console.log(data);
+                setMessageList(data)
+            }
+            )
+    }, [])
+
+
+
+    //console.log(dadosDoSubabase);
+
+    function handleKeyPress(event) {
+        if (event.key == 'Enter' || event.type == 'submit   ') {
+            const complexMessage = {from: 'j-novaes', text: message }
+            setMessageList([complexMessage, ...messageList]);
             event.preventDefault();
             setMessage('');
         }
+    }
+
+    function handleSubmit(event) {
+        event.preventDefault();
+        //const complexMessage = {from: 'j-novaes', text: message }
+        supabaseClient
+            .from('messages')
+            .insert([
+                {from: 'j-novaes', text: message,}
+            ])
+            .then(({data}) => {
+                setMessageList([data[0], ...messageList]);
+            })
+        
+        setMessage('');
     }
 
     return (
@@ -56,14 +92,11 @@ export default function ChatPage() {
                     }}
                 >
 
-                    <MessageList messageList={messageList} />
+                    <MessageList messageList={messageList} setMessageList={setMessageList} />
 
-                    {/* APAGAR ISSO AQUI 
-                    
-                    <Box>{messageList.map(m => <p key={m.id}>{m.from} : {m.text}</p>)}</Box>
-                    */}
                     <Box
                         as="form"
+                        onSubmit={event => { handleSubmit(event) }}
                         styleSheet={{
                             display: 'flex',
                             alignItems: 'center',
@@ -86,7 +119,16 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
-                        
+                        <Button
+                            type="submit"
+                            label='Enviar'
+                            buttonColors={{
+                                contrastColor: appConfig.theme.colors.neutrals["000"],
+                                mainColor: appConfig.theme.colors.primary[500],
+                                mainColorLight: appConfig.theme.colors.primary[400],
+                                mainColorStrong: appConfig.theme.colors.primary[600],
+                            }}
+                        ></Button>
                     </Box>
                 </Box>
             </Box>
@@ -112,7 +154,7 @@ function Header() {
     )
 }
 
-function MessageList({ messageList }) {
+function MessageList({ messageList, setMessageList }) {
     //console.log('MessageList', props);
     return (
         <Box
@@ -158,7 +200,7 @@ function MessageList({ messageList }) {
                                 }}
                                 src={`https://github.com/vanessametonini.png`}
                             />
-                            <Text tag="strong" styleSheet={{display:'inline'}}>
+                            <Text tag="strong" styleSheet={{ display: 'inline' }}>
                                 {message.from}
                             </Text>
                             <Text
@@ -166,11 +208,15 @@ function MessageList({ messageList }) {
                                     fontSize: '10px',
                                     marginLeft: '8px',
                                     color: appConfig.theme.colors.neutrals[300],
-                                    display:'inline'
+                                    display: 'inline'
                                 }}
                                 tag="span"
                             >
                                 {(new Date().toLocaleDateString())}
+                            </Text>
+
+                            <Text tag="strong" onClick={() => setMessageList(messageList.filter((m) => m.id != message.id))}>
+                                X
                             </Text>
                         </Box>
                         {message.text}
