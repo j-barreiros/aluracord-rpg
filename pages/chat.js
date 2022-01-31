@@ -1,56 +1,75 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React, { useSate } from 'react';
 import appConfig from '../config.json';
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQ3MjIwOCwiZXhwIjoxOTU5MDQ4MjA4fQ.IkByJnqNkKT7c3GnT3sg8DRG2IHt-oQ3mjZwFX13V7c'
+const SUPABASE_URL = 'https://pubajyetphvslihfgagf.supabase.co'
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+function listenMessagesInRealTime(addMessage) {
+    return supabaseClient
+        .from('messages')
+        .on('INSERT', (res) => {
+            addMessage(res.new);
+        })
+        .subscribe();
+}
 
 export default function ChatPage() {
     // Sua lógica vai aqui
+    const routing = useRouter();
+    const loggedUser = routing.query.username;
     const [message, setMessage] = React.useState('');
-    const [messageList, setMessageList] = React.useState([])
+    const [messageList, setMessageList] = React.useState([
+        { id: 1, from: 'j-novaes', text: ':sticker:https://www.alura.com.br/imersao-react-4/assets/figurinhas/Figurinha_1.png' }
+    ])
     // ./Sua lógica vai aqui
 
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQ3MjIwOCwiZXhwIjoxOTU5MDQ4MjA4fQ.IkByJnqNkKT7c3GnT3sg8DRG2IHt-oQ3mjZwFX13V7c'
-    const SUPABASE_URL = 'https://pubajyetphvslihfgagf.supabase.co'
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     React.useEffect(() => {
         supabaseClient
             .from('messages')
             .select('*')
-            .order('id', {ascending: false})
+            .order('id', { ascending: false })
             .then(({ data }) => {
-                console.log(data);
                 setMessageList(data)
             }
-            )
+            );
+        listenMessagesInRealTime((newMessage) => {
+            setMessageList((actualListValue) => {
+                return([
+                    newMessage,
+                    ...actualListValue
+                ])
+            })
+        });
     }, [])
 
+    function addToSupabase() {
+        supabaseClient
+            .from('messages')
+            .insert([
+                { from: loggedUser, text: message, }
+            ])
+            .then(({ data }) => {
+                //setMessageList([data[0], ...messageList]);
+            })
+    }
 
-
-    //console.log(dadosDoSubabase);
 
     function handleKeyPress(event) {
-        if (event.key == 'Enter' || event.type == 'submit   ') {
-            const complexMessage = {from: 'j-novaes', text: message }
-            setMessageList([complexMessage, ...messageList]);
+        if (event.key == 'Enter') {
             event.preventDefault();
+            addToSupabase();
             setMessage('');
         }
     }
 
     function handleSubmit(event) {
         event.preventDefault();
-        //const complexMessage = {from: 'j-novaes', text: message }
-        supabaseClient
-            .from('messages')
-            .insert([
-                {from: 'j-novaes', text: message,}
-            ])
-            .then(({data}) => {
-                setMessageList([data[0], ...messageList]);
-            })
-        
+        addToSupabase();
         setMessage('');
     }
 
@@ -129,6 +148,19 @@ export default function ChatPage() {
                                 mainColorStrong: appConfig.theme.colors.primary[600],
                             }}
                         ></Button>
+
+                        <ButtonSendSticker
+                            onStickerClick={(stickerURL) => {
+                                supabaseClient
+                                    .from('messages')
+                                    .insert([
+                                        { from: loggedUser, text: `:sticker:${stickerURL}`, }
+                                    ])
+                                    .then(({ data }) => {
+                                        setMessageList([data[0], ...messageList]);
+                                    })
+                            }}
+                        />
                     </Box>
                 </Box>
             </Box>
@@ -198,7 +230,7 @@ function MessageList({ messageList, setMessageList }) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${message.from}.png`}
                             />
                             <Text tag="strong" styleSheet={{ display: 'inline' }}>
                                 {message.from}
@@ -219,7 +251,12 @@ function MessageList({ messageList, setMessageList }) {
                                 X
                             </Text>
                         </Box>
-                        {message.text}
+                        {message.text.startsWith(':sticker:') ?
+                            (<Image src={message.text.replace(':sticker:', '')}></Image>)
+                            :
+                            (message.text)}
+
+                        {/* message.text*/}
                     </Text>
                 )
             })}
